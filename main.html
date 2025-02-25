@@ -100,7 +100,7 @@
             const timeButtons = document.querySelectorAll(".time-select button");
             const soundButtons = document.querySelectorAll(".sound-picker button");
 
-            let duration = 600; // Default 10 minutes
+            let duration = 600;
             let interval;
             let playing = false;
 
@@ -126,6 +126,7 @@
                         playing = false;
                         video.pause();
                         audio.pause();
+                        window.audioPlaying = false;
                     }
                 }, 1000);
             }
@@ -133,18 +134,16 @@
             playBtn.addEventListener("click", () => {
                 if (!playing) {
                     audio.play().then(() => {
-                        window.audioPlaying = true; // Cypress test: track playing state
+                        window.audioPlaying = true;
                     }).catch(err => console.warn("Audio play error:", err));
-                    
                     video.play().catch(err => console.warn("Video play error:", err));
-
                     startTimer();
                 } else {
                     audio.pause();
                     video.pause();
                     clearInterval(interval);
                     playing = false;
-                    window.audioPlaying = false; // Cypress test: track stopped state
+                    window.audioPlaying = false;
                 }
             });
 
@@ -171,10 +170,8 @@
                         video.src = "Sounds/rain.mp4";
                         audio.src = "Sounds/rain.mp3";
                     }
-
                     audio.load();
                     video.load();
-
                     audio.addEventListener("canplaythrough", () => {
                         window.audioReady = true;
                     }, { once: true });
@@ -183,7 +180,6 @@
 
             updateTime();
 
-            // ** Cypress Helper Function **
             window.expectPlayingAudio = (shouldBePlaying = true) => {
                 return new Promise((resolve, reject) => {
                     setTimeout(() => {
@@ -192,11 +188,10 @@
                         } else {
                             reject(new Error(`Expected audio playing: ${shouldBePlaying}, but got: ${window.audioPlaying}`));
                         }
-                    }, 500); // Cypress waits 500ms for audio to start
+                    }, 500);
                 });
             };
 
-            // Ensure Cypress waits for the audio to be ready
             audio.addEventListener("playing", () => {
                 window.audioPlaying = true;
             });
