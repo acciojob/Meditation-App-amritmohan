@@ -70,7 +70,7 @@
         </div>
 
         <div class="player-container">
-            <audio>
+            <audio id="audio-player">
                 <source src="Sounds/beach.mp3" type="audio/mpeg">
                 <source src="Sounds/beach.ogg" type="audio/ogg">
             </audio>
@@ -82,9 +82,9 @@
         </div>
 
         <div class="time-select">
-            <button id="smaller-mins">2 Min</button>
-            <button id="medium-mins">5 Min</button>
-            <button id="long-mins">10 Min</button>
+            <button class="smaller-mins">2 Min</button>
+            <button class="medium-mins">5 Min</button>
+            <button class="long-mins">10 Min</button>
         </div>
 
         <div class="time-display">10:0</div>
@@ -94,7 +94,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const video = document.querySelector(".vid-container video");
-            const audio = document.querySelector(".player-container audio");
+            const audio = document.querySelector("#audio-player");
             const playBtn = document.querySelector(".play");
             const timeDisplay = document.querySelector(".time-display");
             const timeButtons = document.querySelectorAll(".time-select button");
@@ -150,9 +150,9 @@
                     video.pause();
                     audio.pause();
 
-                    if (e.target.id === "smaller-mins") duration = 120;
-                    if (e.target.id === "medium-mins") duration = 300;
-                    if (e.target.id === "long-mins") duration = 600;
+                    if (e.target.classList.contains("smaller-mins")) duration = 120;
+                    if (e.target.classList.contains("medium-mins")) duration = 300;
+                    if (e.target.classList.contains("long-mins")) duration = 600;
                     updateTime();
                 });
             });
@@ -181,6 +181,13 @@
             });
 
             updateTime();
+
+            // Cypress Helper Functions
+            window.expectPlayingAudio = (shouldBePlaying = true) => {
+                const isPlaying = !audio.paused && audio.currentTime > 0;
+                console.log("Audio Playing:", isPlaying);
+                return isPlaying === shouldBePlaying;
+            };
         });
     </script>
 </body>
