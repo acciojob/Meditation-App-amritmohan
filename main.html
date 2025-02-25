@@ -6,125 +6,188 @@
     <title>Meditation App</title>
     <style>
         body {
-            text-align: center;
             font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f0f0f0;
         }
+
         .app {
-            max-width: 600px;
-            margin: auto;
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
         }
-        .vid-container {
-            position: relative;
-            width: 100%;
-        }
-        video {
+
+        .vid-container video {
             width: 100%;
             border-radius: 10px;
         }
-        .time-display {
-            font-size: 2rem;
-            margin: 20px 0;
-        }
+
         .sound-picker, .time-select {
-            margin: 10px;
+            margin-top: 10px;
         }
+
         button {
-            padding: 10px 15px;
-            font-size: 1rem;
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #007BFF;
+            color: white;
+            font-size: 16px;
             cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .time-display {
+            font-size: 24px;
+            margin-top: 10px;
+        }
+
+        .play {
+            margin-top: 20px;
+            background: green;
+        }
+
+        .play:hover {
+            background: darkgreen;
         }
     </style>
 </head>
 <body>
     <div class="app">
         <div class="vid-container">
-            <video id="video-player" src="Sounds/beach.mp4" loop></video>
+            <video loop muted>
+                <source src="Sounds/beach.mp4" type="video/mp4">
+                <source src="Sounds/beach.webm" type="video/webm">
+            </video>
         </div>
-        <div class="time-display">10:0</div>
-        <div class="time-select">
-            <button id="smaller-mins">2 min</button>
-            <button id="medium-mins">5 min</button>
-            <button id="long-mins">10 min</button>
-        </div>
+
         <div class="player-container">
-            <audio id="audio-player" src="Sounds/beach.mp3"></audio>
+            <audio id="audio-player">
+                <source src="Sounds/beach.mp3" type="audio/mpeg">
+                <source src="Sounds/beach.ogg" type="audio/ogg">
+            </audio>
         </div>
-        <button class="play">Play</button>
+
         <div class="sound-picker">
-            <button data-sound="Sounds/beach.mp3" data-video="Sounds/beach.mp4">Beach</button>
-            <button data-sound="Sounds/rain.mp3" data-video="Sounds/rain.mp4">Rain</button>
+            <button id="beach-sound">Beach</button>
+            <button id="rain-sound">Rain</button>
         </div>
+
+        <div class="time-select">
+            <button class="smaller-mins">2 Min</button>
+            <button class="medium-mins">5 Min</button>
+            <button class="long-mins">10 Min</button>
+        </div>
+
+        <div class="time-display">10:0</div>
+        <button class="play">Play</button>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const video = document.querySelector("#video-player");
+            const video = document.querySelector(".vid-container video");
             const audio = document.querySelector("#audio-player");
             const playBtn = document.querySelector(".play");
             const timeDisplay = document.querySelector(".time-display");
             const timeButtons = document.querySelectorAll(".time-select button");
             const soundButtons = document.querySelectorAll(".sound-picker button");
 
+            let duration = 600; // Default 10 minutes
+            let interval;
             let playing = false;
-            let isAudioReady = false;
-            let duration = 600; // Default to 10 minutes
 
-            // Ensure Cypress waits for the audio to be ready
-            audio.addEventListener("canplaythrough", () => {
-                isAudioReady = true;
-            });
-
-            function updateTimerDisplay() {
-                let minutes = Math.floor(duration / 60);
-                let seconds = duration % 60;
-                timeDisplay.textContent = `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+            function formatTimeDisplay(minutes, seconds) {
+                return `${minutes}:${seconds === 0 ? '0' : seconds}`; // Ensures "10:0" instead of "10:00"
             }
 
-            function expectPlayingAudio(shouldBePlaying = true) {
-                if (!isAudioReady) {
-                    console.warn("Audio not ready yet.");
-                    return false;
-                }
-                const isPlaying = !audio.paused && audio.currentTime > 0;
-                return isPlaying === shouldBePlaying;
+            function updateTime() {
+                let minutes = Math.floor(duration / 60);
+                let seconds = duration % 60;
+                timeDisplay.innerText = formatTimeDisplay(minutes, seconds);
+            }
+
+            function startTimer() {
+                if (playing) return;
+                playing = true;
+                interval = setInterval(() => {
+                    if (duration > 0) {
+                        duration--;
+                        updateTime();
+                    } else {
+                        clearInterval(interval);
+                        playing = false;
+                        video.pause();
+                        audio.pause();
+                    }
+                }, 1000);
             }
 
             playBtn.addEventListener("click", () => {
                 if (!playing) {
                     audio.play().catch(err => console.warn("Audio play error:", err));
                     video.play().catch(err => console.warn("Video play error:", err));
-                    playing = true;
+                    startTimer();
                 } else {
                     audio.pause();
                     video.pause();
+                    clearInterval(interval);
                     playing = false;
                 }
             });
 
             timeButtons.forEach(button => {
-                button.addEventListener("click", () => {
-                    if (button.id === "smaller-mins") duration = 120;
-                    else if (button.id === "medium-mins") duration = 300;
-                    else if (button.id === "long-mins") duration = 600;
-                    updateTimerDisplay();
+                button.addEventListener("click", (e) => {
+                    clearInterval(interval);
+                    playing = false;
+                    video.pause();
+                    audio.pause();
+
+                    if (e.target.classList.contains("smaller-mins")) duration = 120;
+                    if (e.target.classList.contains("medium-mins")) duration = 300;
+                    if (e.target.classList.contains("long-mins")) duration = 600;
+                    updateTime();
                 });
             });
 
             soundButtons.forEach(button => {
-                button.addEventListener("click", () => {
-                    let newSound = button.getAttribute("data-sound");
-                    let newVideo = button.getAttribute("data-video");
-                    audio.src = newSound;
-                    video.src = newVideo;
-                    if (playing) {
-                        audio.play();
-                        video.play();
+                button.addEventListener("click", (e) => {
+                    if (e.target.id === "beach-sound") {
+                        video.src = "Sounds/beach.mp4";
+                        audio.src = "Sounds/beach.mp3";
+                    } else if (e.target.id === "rain-sound") {
+                        video.src = "Sounds/rain.mp4";
+                        audio.src = "Sounds/rain.mp3";
                     }
+
+                    audio.load(); // Reload audio source to avoid NotSupportedError
+                    video.load();
+
+                    // Wait for audio to be ready before playing
+                    audio.addEventListener("canplaythrough", () => {
+                        if (playing) {
+                            audio.play().catch(err => console.warn("Audio play error:", err));
+                            video.play().catch(err => console.warn("Video play error:", err));
+                        }
+                    }, { once: true });
                 });
             });
 
-            updateTimerDisplay();
-            window.expectPlayingAudio = expectPlayingAudio; // For Cypress test compatibility
+            updateTime();
+
+            // Cypress Helper Functions
+            window.expectPlayingAudio = (shouldBePlaying = true) => {
+                const isPlaying = !audio.paused && audio.currentTime > 0;
+                console.log("Audio Playing:", isPlaying);
+                return isPlaying === shouldBePlaying;
+            };
         });
     </script>
 </body>
