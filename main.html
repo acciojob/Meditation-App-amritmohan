@@ -63,11 +63,17 @@
 <body>
     <div class="app">
         <div class="vid-container">
-            <video src="Sounds/beach.mp4" loop muted></video>
+            <video loop muted>
+                <source src="Sounds/beach.mp4" type="video/mp4">
+                <source src="Sounds/beach.webm" type="video/webm">
+            </video>
         </div>
 
         <div class="player-container">
-            <audio src="Sounds/beach.mp3"></audio>
+            <audio>
+                <source src="Sounds/beach.mp3" type="audio/mpeg">
+                <source src="Sounds/beach.ogg" type="audio/ogg">
+            </audio>
         </div>
 
         <div class="sound-picker">
@@ -99,7 +105,7 @@
             let playing = false;
 
             function formatTimeDisplay(minutes, seconds) {
-                return `${minutes}:${seconds}`; // Keeping "10:0" format to match Cypress test expectations
+                return `${minutes}:${seconds === 0 ? '0' : seconds}`; // Ensures "10:0" instead of "10:00"
             }
 
             function updateTime() {
@@ -126,8 +132,8 @@
 
             playBtn.addEventListener("click", () => {
                 if (!playing) {
-                    audio.play();
-                    video.play();
+                    audio.play().catch(err => console.warn("Audio play error:", err));
+                    video.play().catch(err => console.warn("Video play error:", err));
                     startTimer();
                 } else {
                     audio.pause();
@@ -161,10 +167,16 @@
                         audio.src = "Sounds/rain.mp3";
                     }
 
-                    if (playing) {
-                        audio.play();
-                        video.play();
-                    }
+                    audio.load(); // Reload audio source to avoid NotSupportedError
+                    video.load();
+
+                    // Wait for audio to be ready before playing
+                    audio.addEventListener("canplaythrough", () => {
+                        if (playing) {
+                            audio.play().catch(err => console.warn("Audio play error:", err));
+                            video.play().catch(err => console.warn("Video play error:", err));
+                        }
+                    }, { once: true });
                 });
             });
 
